@@ -57,7 +57,6 @@ gem "puma", "~> 4.3"
 gem "rack-attack", "~> 6.3.0"
 gem "rails", "~> 6.0"
 gem "redis", "~> 4.0", require: ["redis", "redis/connection/hiredis"]
-gem "render_later", "~> 0.1.1"
 gem "rollbar", "~> 2.21"
 gem "ruby_identicon", "~> 0.0.5"
 gem "sass-rails", "~> 6.0"

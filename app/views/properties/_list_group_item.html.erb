@@ -18,10 +18,8 @@
         <li class="d-none d-sm-inline list-inline-item mr-3">
           <span class="badge badge-subtle badge-<%= status_color(property.status) %>"><%= property.status.humanize %></span>
         </li>
-        <li class="d-none d-sm-inline list-inline-item mr-3">
-          <%= render_later async_property_sparkline_path(property_id: property.id) do %>
-            <i class="fa fa-spinner fa-spin text-primary"></i>
-          <% end %>
+        <li class="d-none d-sm-inline list-inline-item mr-3" id="property-sparkline-<%= property.id %>">
+
         </li>
         <li class="d-none d-sm-inline list-inline-item">
           <%= edit_button(link: edit_property_path(property)) %>

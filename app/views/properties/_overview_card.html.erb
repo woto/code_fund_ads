@@ -17,8 +17,28 @@
     </div>
   <% end %>
   <%= render(Card::FooterComponent.new(content: false)) do %>
-    <%= render_later async_property_card_footer_path(property_id: property.id) do %>
-      <i class="fa fa-spinner fa-spin text-center d-block"></i>
-    <% end %>
+    <div class="row align-items-center text-center">
+      <div class="col-4 p-0">
+        <div class="metric">
+          <p class="metric-label mb-0">Ttal</p>
+          <p class="metric-label mb-2 text-wrap">Impressions</p>
+          <h6 class="metric-value"><%= number_with_delimiter property.impressions_count(@start_date, @end_date) %></h6>
+        </div>
+      </div>
+      <div class="col-4 p-0">
+        <div class="metric border-left border-right rounded-0 px-2">
+          <p class="metric-label mb-0">Avg.</p>
+          <p class="metric-label mb-2 text-wrap">Click Rate</p>
+          <h6 class="metric-value"><%= number_to_percentage property.click_rate(@start_date, @end_date), precision: 2 %></h6>
+        </div>
+      </div>
+      <div class="col-4 p-0">
+        <div class="metric">
+          <p class="metric-label mb-0">Est.</p>
+          <p class="metric-label mb-2 text-wrap">Earnings</p>
+          <h6 class="metric-value"><%= property.property_revenue(@start_date, @end_date).format %></h6>
+        </div>
+      </div>
+    </div>
   <% end %>
 <% end %>

@@ -13,7 +13,6 @@ class PropertiesController < ApplicationController
 
   def index
     properties = scope_list(Property).order(order_by).includes(:user, :property_traffic_estimates)
-
     if authorized_user.can_admin_system?
       properties = properties.where(user: @user) if @user
     else
@@ -21,6 +20,14 @@ class PropertiesController < ApplicationController
     end
 
     @pagy, @properties = pagy(properties, page: @page)
+
+    GeneratePropertySparklineJob.perform_later(
+      properties: Array(properties),
+      start_date: 1.month.ago.to_date,
+      end_date: 2.days.ago.to_date,
+      from: @pagy.from - 1,
+      to: @pagy.to - 1
+    )
   end
 
   def new

@@ -401,8 +401,6 @@ GEM
     rb-readline (0.5.5)
     redis (4.1.4)
     regexp_parser (1.7.0)
-    render_later (0.1.1)
-      rack
     request_store (1.5.0)
       rack (>= 1.4)
     responders (3.0.0)
@@ -670,7 +668,6 @@ DEPENDENCIES
   rails (~> 6.0)
   rb-readline
   redis (~> 4.0)
-  render_later (~> 0.1.1)
   rollbar (~> 2.21)
   ruby_identicon (~> 0.0.5)
   sass-rails (~> 6.0)

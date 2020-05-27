@@ -10,6 +10,13 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: hdb_views; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA hdb_views;
+
+
+--
 -- Name: pg_stat_statements; Type: EXTENSION; Schema: -; Owner: -
 --
 
@@ -212,8 +219,8 @@ ALTER SEQUENCE public.active_storage_blobs_id_seq OWNED BY public.active_storage
 CREATE TABLE public.ar_internal_metadata (
     key character varying NOT NULL,
     value character varying,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    created_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
 );
 
 
@@ -522,9 +529,9 @@ CREATE TABLE public.daily_summaries (
     scoped_by_id character varying,
     impressions_count integer DEFAULT 0 NOT NULL,
     fallbacks_count integer DEFAULT 0 NOT NULL,
-    fallback_percentage numeric DEFAULT 0.0 NOT NULL,
+    fallback_percentage numeric DEFAULT 0 NOT NULL,
     clicks_count integer DEFAULT 0 NOT NULL,
-    click_rate numeric DEFAULT 0.0 NOT NULL,
+    click_rate numeric DEFAULT 0 NOT NULL,
     ecpm_cents integer DEFAULT 0 NOT NULL,
     ecpm_currency character varying DEFAULT 'USD'::character varying NOT NULL,
     cost_per_click_cents integer DEFAULT 0 NOT NULL,
@@ -560,6 +567,17 @@ CREATE SEQUENCE public.daily_summaries_id_seq
 --
 
 ALTER SEQUENCE public.daily_summaries_id_seq OWNED BY public.daily_summaries.id;
+
+
+--
+-- Name: email_hierarchies; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.email_hierarchies (
+    ancestor_id bigint NOT NULL,
+    descendant_id bigint NOT NULL,
+    generations integer NOT NULL
+);
 
 
 --
@@ -608,7 +626,10 @@ CREATE TABLE public.emails (
     action_mailbox_inbound_email_id bigint NOT NULL,
     direction character varying DEFAULT 'inbound'::character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    in_reply_to character varying,
+    message_id character varying,
+    parent_id bigint
 );
 
 
@@ -694,8 +715,8 @@ CREATE TABLE public.impressions (
     ad_template character varying,
     ad_theme character varying,
     organization_id bigint,
-    province_code character varying,
-    uplift boolean DEFAULT false
+    uplift boolean DEFAULT false,
+    province_code character varying
 )
 PARTITION BY RANGE (advertiser_id, displayed_at_date);
 
@@ -728,8 +749,8 @@ CREATE TABLE public.impressions_default (
     ad_template character varying,
     ad_theme character varying,
     organization_id bigint,
-    province_code character varying,
-    uplift boolean DEFAULT false
+    uplift boolean DEFAULT false,
+    province_code character varying
 );
 ALTER TABLE ONLY public.impressions ATTACH PARTITION public.impressions_default DEFAULT;
 
@@ -948,6 +969,79 @@ ALTER SEQUENCE public.organizations_id_seq OWNED BY public.organizations.id;
 
 
 --
+-- Name: pixel_conversions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.pixel_conversions (
+    id bigint NOT NULL,
+    pixel_id uuid NOT NULL,
+    impression_id uuid NOT NULL,
+    tracking_id character varying NOT NULL,
+    test boolean DEFAULT false,
+    pixel_name character varying DEFAULT ''::character varying NOT NULL,
+    pixel_value_cents integer DEFAULT 0 NOT NULL,
+    pixel_value_currency character varying DEFAULT 'USD'::character varying NOT NULL,
+    advertiser_id bigint NOT NULL,
+    publisher_id bigint NOT NULL,
+    campaign_id bigint NOT NULL,
+    creative_id bigint NOT NULL,
+    property_id bigint NOT NULL,
+    campaign_name character varying NOT NULL,
+    property_name character varying NOT NULL,
+    ip_address character varying NOT NULL,
+    user_agent text NOT NULL,
+    country_code character varying,
+    postal_code character varying,
+    latitude numeric,
+    longitude numeric,
+    displayed_at timestamp without time zone NOT NULL,
+    displayed_at_date date NOT NULL,
+    clicked_at timestamp without time zone,
+    clicked_at_date date,
+    fallback_campaign boolean DEFAULT false NOT NULL,
+    metadata jsonb DEFAULT '"{}"'::jsonb NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: pixel_conversions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.pixel_conversions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: pixel_conversions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.pixel_conversions_id_seq OWNED BY public.pixel_conversions.id;
+
+
+--
+-- Name: pixels; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.pixels (
+    id uuid DEFAULT public.gen_random_uuid() NOT NULL,
+    name character varying NOT NULL,
+    description text,
+    organization_id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    value_cents integer DEFAULT 0 NOT NULL,
+    value_currency character varying DEFAULT 'USD'::character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
 -- Name: properties; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1106,8 +1200,7 @@ ALTER SEQUENCE public.property_traffic_estimates_id_seq OWNED BY public.property
 CREATE TABLE public.publisher_invoices (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    amount_cents integer DEFAULT 0 NOT NULL,
-    amount_currency character varying DEFAULT 'USD'::character varying NOT NULL,
+    amount money NOT NULL,
     currency character varying NOT NULL,
     start_date date NOT NULL,
     end_date date NOT NULL,
@@ -1135,6 +1228,40 @@ CREATE SEQUENCE public.publisher_invoices_id_seq
 --
 
 ALTER SEQUENCE public.publisher_invoices_id_seq OWNED BY public.publisher_invoices.id;
+
+
+--
+-- Name: read_marks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.read_marks (
+    id integer NOT NULL,
+    readable_type character varying NOT NULL,
+    readable_id integer,
+    reader_type character varying NOT NULL,
+    reader_id integer,
+    "timestamp" timestamp without time zone
+);
+
+
+--
+-- Name: read_marks_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.read_marks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: read_marks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.read_marks_id_seq OWNED BY public.read_marks.id;
 
 
 --
@@ -1647,6 +1774,13 @@ ALTER TABLE ONLY public.organizations ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: pixel_conversions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pixel_conversions ALTER COLUMN id SET DEFAULT nextval('public.pixel_conversions_id_seq'::regclass);
+
+
+--
 -- Name: properties id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1672,6 +1806,13 @@ ALTER TABLE ONLY public.property_traffic_estimates ALTER COLUMN id SET DEFAULT n
 --
 
 ALTER TABLE ONLY public.publisher_invoices ALTER COLUMN id SET DEFAULT nextval('public.publisher_invoices_id_seq'::regclass);
+
+
+--
+-- Name: read_marks id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.read_marks ALTER COLUMN id SET DEFAULT nextval('public.read_marks_id_seq'::regclass);
 
 
 --
@@ -1856,6 +1997,22 @@ ALTER TABLE ONLY public.organizations
 
 
 --
+-- Name: pixel_conversions pixel_conversions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pixel_conversions
+    ADD CONSTRAINT pixel_conversions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pixels pixels_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pixels
+    ADD CONSTRAINT pixels_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: properties properties_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1888,6 +2045,14 @@ ALTER TABLE ONLY public.publisher_invoices
 
 
 --
+-- Name: read_marks read_marks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.read_marks
+    ADD CONSTRAINT read_marks_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: scheduled_organization_reports scheduled_organization_reports_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1917,6 +2082,20 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.versions
     ADD CONSTRAINT versions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: email_anc_desc_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX email_anc_desc_idx ON public.email_hierarchies USING btree (ancestor_id, descendant_id, generations);
+
+
+--
+-- Name: email_desc_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX email_desc_idx ON public.email_hierarchies USING btree (descendant_id);
 
 
 --
@@ -2473,6 +2652,13 @@ CREATE INDEX index_emails_on_delivered_at_hour ON public.emails USING btree (dat
 
 
 --
+-- Name: index_emails_on_parent_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_emails_on_parent_id ON public.emails USING btree (parent_id);
+
+
+--
 -- Name: index_emails_on_recipients; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2753,6 +2939,125 @@ CREATE INDEX index_organizations_on_creative_approval_needed ON public.organizat
 
 
 --
+-- Name: index_pixel_conversions_on_advertiser_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pixel_conversions_on_advertiser_id ON public.pixel_conversions USING btree (advertiser_id);
+
+
+--
+-- Name: index_pixel_conversions_on_campaign_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pixel_conversions_on_campaign_id ON public.pixel_conversions USING btree (campaign_id);
+
+
+--
+-- Name: index_pixel_conversions_on_campaign_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pixel_conversions_on_campaign_name ON public.pixel_conversions USING btree (campaign_name);
+
+
+--
+-- Name: index_pixel_conversions_on_clicked_at_date; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pixel_conversions_on_clicked_at_date ON public.pixel_conversions USING btree (clicked_at_date);
+
+
+--
+-- Name: index_pixel_conversions_on_clicked_at_hour; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pixel_conversions_on_clicked_at_hour ON public.pixel_conversions USING btree (date_trunc('hour'::text, clicked_at));
+
+
+--
+-- Name: index_pixel_conversions_on_country_code; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pixel_conversions_on_country_code ON public.pixel_conversions USING btree (country_code);
+
+
+--
+-- Name: index_pixel_conversions_on_creative_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pixel_conversions_on_creative_id ON public.pixel_conversions USING btree (creative_id);
+
+
+--
+-- Name: index_pixel_conversions_on_displayed_at_date; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pixel_conversions_on_displayed_at_date ON public.pixel_conversions USING btree (displayed_at_date);
+
+
+--
+-- Name: index_pixel_conversions_on_displayed_at_hour; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pixel_conversions_on_displayed_at_hour ON public.pixel_conversions USING btree (date_trunc('hour'::text, displayed_at));
+
+
+--
+-- Name: index_pixel_conversions_on_id_and_pixel_id_and_impression_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_pixel_conversions_on_id_and_pixel_id_and_impression_id ON public.pixel_conversions USING btree (id, pixel_id, impression_id);
+
+
+--
+-- Name: index_pixel_conversions_on_impression_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pixel_conversions_on_impression_id ON public.pixel_conversions USING btree (impression_id);
+
+
+--
+-- Name: index_pixel_conversions_on_metadata; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pixel_conversions_on_metadata ON public.pixel_conversions USING gin (metadata);
+
+
+--
+-- Name: index_pixel_conversions_on_pixel_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pixel_conversions_on_pixel_id ON public.pixel_conversions USING btree (pixel_id);
+
+
+--
+-- Name: index_pixel_conversions_on_property_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pixel_conversions_on_property_id ON public.pixel_conversions USING btree (property_id);
+
+
+--
+-- Name: index_pixel_conversions_on_property_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pixel_conversions_on_property_name ON public.pixel_conversions USING btree (property_name);
+
+
+--
+-- Name: index_pixels_on_organization_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pixels_on_organization_id ON public.pixels USING btree (organization_id);
+
+
+--
+-- Name: index_pixels_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_pixels_on_user_id ON public.pixels USING btree (user_id);
+
+
+--
 -- Name: index_properties_on_assigned_fallback_campaign_ids; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2844,13 +3149,6 @@ CREATE INDEX index_publisher_invoices_on_end_date ON public.publisher_invoices U
 
 
 --
--- Name: index_publisher_invoices_on_paid_at; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_publisher_invoices_on_paid_at ON public.publisher_invoices USING btree (paid_at);
-
-
---
 -- Name: index_publisher_invoices_on_start_date; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2862,6 +3160,20 @@ CREATE INDEX index_publisher_invoices_on_start_date ON public.publisher_invoices
 --
 
 CREATE INDEX index_publisher_invoices_on_user_id ON public.publisher_invoices USING btree (user_id);
+
+
+--
+-- Name: index_read_marks_on_readable_type_and_readable_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_read_marks_on_readable_type_and_readable_id ON public.read_marks USING btree (readable_type, readable_id);
+
+
+--
+-- Name: index_read_marks_on_reader_type_and_reader_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_read_marks_on_reader_type_and_reader_id ON public.read_marks USING btree (reader_type, reader_id);
 
 
 --
@@ -2970,6 +3282,13 @@ CREATE INDEX index_versions_on_object_changes ON public.versions USING gin (obje
 
 
 --
+-- Name: read_marks_reader_readable_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX read_marks_reader_readable_index ON public.read_marks USING btree (reader_id, reader_type, readable_type, readable_id);
+
+
+--
 -- Name: impressions_default_ad_template_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -3072,6 +3391,22 @@ ALTER INDEX public.index_impressions_on_province_code ATTACH PARTITION public.im
 --
 
 ALTER INDEX public.index_impressions_on_uplift ATTACH PARTITION public.impressions_default_uplift_idx;
+
+
+--
+-- Name: pixels fk_rails_6b2dcde3e7; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pixels
+    ADD CONSTRAINT fk_rails_6b2dcde3e7 FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+
+
+--
+-- Name: pixels fk_rails_d13d92d4dc; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pixels
+    ADD CONSTRAINT fk_rails_d13d92d4dc FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -3183,6 +3518,11 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20200511174710'),
 ('20200513193432'),
 ('20200513210427'),
-('20200519191749');
+('20200519191749'),
+('20200521213149'),
+('20200521230331'),
+('20200522191943'),
+('20200527164824'),
+('20200527175633');
 
 

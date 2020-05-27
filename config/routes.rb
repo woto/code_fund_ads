@@ -23,6 +23,8 @@ Rails.application.routes.draw do
 
   # resource :global_stats, only: [:show], defaults: {format: :json}
 
+  resources :pixel_conversions, only: [:create], path: "/pixels/:pixel_id/convert"
+
   resources :jobs, only: [:index]
   resources :job_posting_prospects, except: [:index, :destroy], path: "/jobs/listings"
   scope "/jobs/listings/:job_posting_id" do
@@ -43,6 +45,7 @@ Rails.application.routes.draw do
   resources :organizations
   scope "/organization/:organization_id/" do
     resources :organization_comments, only: [:index], path: "/comments"
+    resources :organization_pixels, path: "/pixels", as: :organization_pixels
     resources :organization_reports, except: [:edit], as: :organization_reports, path: "/reports"
     resources :organization_transactions, path: "/transactions"
     resources :organization_users, path: "/members", as: :organization_users

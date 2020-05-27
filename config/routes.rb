@@ -23,7 +23,7 @@ Rails.application.routes.draw do
 
   # resource :global_stats, only: [:show], defaults: {format: :json}
 
-  resources :pixel_conversions, only: [:create], path: "/pixels/:pixel_id/convert"
+  match "/pixels/:pixel_id/convert", to: "pixel_conversions#create", via: [:get, :post]
 
   resources :jobs, only: [:index]
   resources :job_posting_prospects, except: [:index, :destroy], path: "/jobs/listings"

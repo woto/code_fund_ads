@@ -12,8 +12,6 @@ class CreatePixelConversions < ActiveRecord::Migration[6.0]
       t.bigint :campaign_id, null: false
       t.bigint :creative_id, null: false
       t.bigint :property_id, null: false
-      t.string :campaign_name, null: false
-      t.string :property_name, null: false
       t.string :ip_address, null: false
       t.text :user_agent, null: false
       t.string :country_code
@@ -27,15 +25,13 @@ class CreatePixelConversions < ActiveRecord::Migration[6.0]
       t.boolean :fallback_campaign, default: false, null: false
       t.jsonb :metadata, null: false, default: '{}'
 
-      t.index [:id, :pixel_id, :impression_id], unique: true
+      t.index [:pixel_id, :impression_id], unique: true
       t.index :pixel_id
       t.index :impression_id
       t.index :advertiser_id
       t.index :campaign_id
       t.index :creative_id
       t.index :property_id
-      t.index :campaign_name
-      t.index :property_name
       t.index :country_code
       t.index :displayed_at_date
       t.index "date_trunc('hour', displayed_at)", name: "index_pixel_conversions_on_displayed_at_hour"

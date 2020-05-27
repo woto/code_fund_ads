@@ -5,6 +5,6 @@
   <%= table_data add_class: "text-right" do %>
     <%= edit_button(link: edit_organization_pixel_path(organization, pixel), title: "Edit Pixel", admin: true) %>
     <%= delete_button(link: edit_organization_pixel_path(organization, pixel), title: "Remove Pixel", admin: true) %>
-    <%= goto_button(link: edit_organization_pixel_path(organization, pixel), icon: "fas fa-chevron-right", title: "View pixel") %>
+    <%= goto_button(link: organization_pixel_path(organization, pixel), icon: "fas fa-chevron-right", title: "View Pixel") %>
   <% end %>
 <% end %>

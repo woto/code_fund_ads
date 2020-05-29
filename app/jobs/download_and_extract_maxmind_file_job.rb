@@ -4,17 +4,20 @@ require "zlib"
 require "rubygems/package"
 
 class DownloadAndExtractMaxmindFileJob < ApplicationJob
+  queue_as :low
+  sidekiq_options retry: 0
+
   MAXMIND_URI = URI("https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=#{ENV["MAXMIND_LICENSE_KEY"]}&suffix=tar.gz")
   MAXMIND_DIR = Rails.root.join("tmp/maxmind")
   MAXMIND_PATH = MAXMIND_DIR.join("GeoLite2-City.tar.gz")
   MAXMIND_LEGACY_DIR = Rails.root.join("db/maxmind")
   MAXMIND_LEGACY_PATH = MAXMIND_LEGACY_DIR.join("GeoLite2-City.tar.gz")
 
-  queue_as :low
-
   def perform
     ScoutApm::Transaction.ignore! if rand > (ENV["SCOUT_SAMPLE_RATE"] || 1).to_f
     FileUtils.mkdir_p MAXMIND_DIR
+    # If the file was already downloaded today, do not download it again.
+    return if File.mtime(MAXMIND_PATH).utc.today?
     download
     extract
   rescue => e

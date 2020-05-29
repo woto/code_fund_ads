@@ -1,3 +1,3 @@
 # frozen_string_literal: true
 
-json.(@conversion, :id)
+json.call(@conversion, :id)

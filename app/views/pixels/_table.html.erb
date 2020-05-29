@@ -8,7 +8,7 @@
       <% end %>
     <% end %>
     <%= table_body do %>
-      <%= render partial: "/organization_pixels/tr", locals: {organization: @organization}, collection: pixels, as: :pixel %>
+      <%= render partial: "/pixels/tr", locals: {organization: @organization}, collection: pixels, as: :pixel %>
     <% end %>
   <% end %>
   <%= pagination_wrapper do %>

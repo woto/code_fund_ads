@@ -1,57 +1,61 @@
-require 'test_helper'
+require "test_helper"
 
 class PixelConversionsControllerTest < ActionDispatch::IntegrationTest
-  fixtures :pixels
-  
-  test "should create pixel conversion" do
-    pixel = pixels(:one)
-    impression = premium_impression
+  setup do
+    @pixel = pixels(:one)
+    @impression = premium_impression
+  end
 
-    post pixel_conversions_path(pixel), as: :json, params: {
-      tracking_id: impression.id.to_s,
-      test: true,
-      metadata: {}
-    }
-    
-    json = JSON.parse(response.body)
-    conversion = PixelConversion.find(json["id"])
-    assert_equal impression.id, conversion.impression_id
+  test "should create pixel conversion on GET" do
+    perform_enqueued_jobs do
+      get pixel_conversions_path(@pixel, @impression), params: {
+        test: true,
+        metadata: {"foo" => "bar"}
+      }
+    end
+    assert status == 202
+    assert_performed_jobs 1
+    conversion = @pixel.pixel_conversions.find_by(pixel: @pixel, impression: @impression)
+    assert conversion
     assert conversion.test?
-    assert_equal 201, status
+    assert conversion.metadata["foo"] = "bar"
   end
-  
+
+  test "should create pixel conversion on POST" do
+    perform_enqueued_jobs do
+      post pixel_conversions_path(@pixel, @impression), params: {
+        test: true,
+        metadata: {"foo" => "bar"}
+      }
+    end
+    assert status == 202
+    assert_performed_jobs 1
+    conversion = @pixel.pixel_conversions.find_by(pixel: @pixel, impression: @impression)
+    assert conversion
+    assert conversion.test?
+    assert conversion.metadata["foo"] = "bar"
+  end
+
   test "should not create pixel conversion when tracking_id is invalid" do
-    pixel = pixels(:one)
-    impression = premium_impression
-
-    post pixel_conversions_path(pixel), as: :json, params: {
-      tracking_id: "foo",
-      test: true
-    }
-    
-    json = JSON.parse(response.body)
-    assert_equal "Invalid Tracking ID", json["message"]
-    assert_equal 404, status
+    perform_enqueued_jobs do
+      post pixel_conversions_path(@pixel, SecureRandom.uuid), params: {test: true}
+    end
+    assert status == 202
+    assert_performed_jobs 1
+    conversion = @pixel.pixel_conversions.find_by(pixel: @pixel, impression: @impression)
+    refute conversion
   end
-  
+
   test "should not create pixel conversion when conversion already exists" do
-    pixel = pixels(:one)
-    impression = premium_impression
-
-    PixelConversion.create_from \
-      pixel: pixel,
-      impression: impression,
-      tracking_id: impression.id.to_s,
-      test: true,
-      metadata: {}
-
-    post pixel_conversions_path(pixel), as: :json, params: {
-      tracking_id: impression.id,
-      test: true
-    }
-    
-    json = JSON.parse(response.body)
-    assert_equal "Unable to save conversion", json["message"]
-    assert_equal 422, status
+    @pixel.record_conversion(@impression.id, test: true)
+    assert PixelConversion.where(pixel: @pixel, impression: @impression).count == 1
+    perform_enqueued_jobs do
+      post pixel_conversions_path(@pixel, @impression), params: {
+        test: true
+      }
+    end
+    assert status == 202
+    assert_performed_jobs 1
+    assert PixelConversion.where(pixel: @pixel, impression: @impression).count == 1
   end
 end

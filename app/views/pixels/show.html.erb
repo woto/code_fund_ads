@@ -1,8 +1,8 @@
 <%= render(PageComponent.new(subject: @organization)) do |component| %>
   <% component.with(:header) do %>
     <%= render(Page::HeaderComponent.new(title: @pixel.name, subtitle: "conversion pixel for #{@organization.name}", buttons: [
-      layout_button(link: edit_organization_pixel_path(@organization, @pixel), icon: "fas fa-pencil", title: "Edit pixel"),
-      delete_button(link: organization_pixel_path(@organization, @pixel), title: "Delete pixel", layout: true)
+      layout_button(link: edit_pixel_path(@organization, @pixel), icon: "fas fa-pencil", title: "Edit pixel"),
+      delete_button(link: pixel_path(@organization, @pixel), title: "Delete pixel", layout: true)
     ])) %>
   <% end %>
   <% component.with(:body) do %>

@@ -3,8 +3,7 @@ class CreatePixelConversions < ActiveRecord::Migration[6.0]
     create_table :pixel_conversions do |t|
       t.uuid :pixel_id, null: false
       t.uuid :impression_id, null: false
-      t.string :tracking_id, null: false
-      t.boolean :test, default: false
+      t.boolean :test, null: false, default: false
       t.string :pixel_name, null: false, default: ""
       t.monetize :pixel_value, default: Money.new(0, "USD"), null: false
       t.bigint :advertiser_id, null: false
@@ -23,7 +22,7 @@ class CreatePixelConversions < ActiveRecord::Migration[6.0]
       t.datetime :clicked_at
       t.date :clicked_at_date
       t.boolean :fallback_campaign, default: false, null: false
-      t.jsonb :metadata, null: false, default: '{}'
+      t.jsonb :metadata, null: false, default: "{}"
 
       t.index [:pixel_id, :impression_id], unique: true
       t.index :pixel_id

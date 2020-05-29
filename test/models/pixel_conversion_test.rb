@@ -17,7 +17,7 @@
 #  pixel_value_cents    :integer          default(0), not null
 #  pixel_value_currency :string           default("USD"), not null
 #  postal_code          :string
-#  test                 :boolean          default(FALSE)
+#  test                 :boolean          default(FALSE), not null
 #  user_agent           :text             not null
 #  created_at           :datetime         not null
 #  updated_at           :datetime         not null
@@ -28,7 +28,6 @@
 #  pixel_id             :uuid             not null
 #  property_id          :bigint           not null
 #  publisher_id         :bigint           not null
-#  tracking_id          :string           not null
 #
 # Indexes
 #
@@ -46,7 +45,7 @@
 #  index_pixel_conversions_on_pixel_id_and_impression_id  (pixel_id,impression_id) UNIQUE
 #  index_pixel_conversions_on_property_id                 (property_id)
 #
-require 'test_helper'
+require "test_helper"
 
 class PixelConversionTest < ActiveSupport::TestCase
   # test "the truth" do

@@ -1,4 +1,4 @@
-class OrganizationPixelsController < ApplicationController
+class PixelsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_organization
   before_action :set_pixel, only: [:show, :edit, :update, :destroy]
@@ -18,8 +18,8 @@ class OrganizationPixelsController < ApplicationController
 
     respond_to do |format|
       if @pixel.save
-        format.html { redirect_to organization_pixels_path(@organization), notice: "Pixel was successfully created" }
-        format.json { render :show, status: :created, location: organization_pixel_path(@organization, @pixel) }
+        format.html { redirect_to pixels_path(@organization), notice: "Pixel was successfully created" }
+        format.json { render :show, status: :created, location: pixel_path(@organization, @pixel) }
       else
         format.html { render :new }
         format.json { render json: @pixel.errors, status: :unprocessable_entity }
@@ -32,8 +32,8 @@ class OrganizationPixelsController < ApplicationController
 
     respond_to do |format|
       if @pixel.save
-        format.html { redirect_to organization_pixel_path(@organization, @pixel), notice: "Pixel was successfully updated." }
-        format.json { render :show, status: :ok, location: organization_pixel_path(@organization, @pixel) }
+        format.html { redirect_to pixel_path(@organization, @pixel), notice: "Pixel was successfully updated." }
+        format.json { render :show, status: :ok, location: pixel_path(@organization, @pixel) }
       else
         format.html { render :edit }
         format.json { render json: @pixel.errors, status: :unprocessable_entity }
@@ -44,10 +44,10 @@ class OrganizationPixelsController < ApplicationController
   def destroy
     respond_to do |format|
       if @pixel.destroy
-        format.html { redirect_to organization_pixels_path(@organization), notice: "Pixel was deleted successfully" }
+        format.html { redirect_to pixels_path(@organization), notice: "Pixel was deleted successfully" }
         format.json { head :no_content }
       else
-        format.html { redirect_to organization_pixels_path(@organization), notice: @organization.errors.messages.to_s }
+        format.html { redirect_to pixels_path(@organization), notice: @organization.errors.messages.to_s }
         format.json { render json: @organization_user.errors, status: :unprocessable_entity }
       end
     end
@@ -70,6 +70,9 @@ class OrganizationPixelsController < ApplicationController
   end
 
   def pixel_params
-    params.require(:pixel).permit(:description, :name, :value, :user_id)
+    params.require(:pixel).permit(:description, :name, :value, :user_id).tap do |whitelisted|
+      whitelisted[:organization_id] = Current.organization.id
+      whitelisted[:user_id] = params[:pixel][:user_id] if authorized_user.can_admin_system?
+    end
   end
 end

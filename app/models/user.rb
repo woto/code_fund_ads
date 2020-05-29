@@ -226,7 +226,7 @@ class User < ApplicationRecord
     def referral_code(user_id)
       where(id: user_id).limit(1).pluck(:referral_code).first
     end
- end
+  end
 
   # public instance methods ...................................................
 

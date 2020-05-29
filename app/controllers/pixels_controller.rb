@@ -10,7 +10,7 @@ class PixelsController < ApplicationController
   end
 
   def new
-    @pixel = @organization.pixels.build
+    @pixel = @organization.pixels.build(user: current_user)
   end
 
   def create
@@ -71,7 +71,6 @@ class PixelsController < ApplicationController
 
   def pixel_params
     params.require(:pixel).permit(:description, :name, :value, :user_id).tap do |whitelisted|
-      whitelisted[:organization_id] = Current.organization.id
       whitelisted[:user_id] = params[:pixel][:user_id] if authorized_user.can_admin_system?
     end
   end
